@@ -6,7 +6,7 @@ type Point = [Float]
 
 -- We want our initial centroids to be reasonable values,
 -- so we find the range of each "feature"
---range :: [Point] -> [(IO Float, IO Float)]
+range :: [Point] -> [(Float, Float)]
 range pss = reverse (rangeHelp (length(head pss)) pss)
 
 --rangeHelp :: Int -> [Point] -> [(IO Float, IO Float)]
@@ -15,13 +15,18 @@ rangeHelp l pss = (let feature = [ps !! (l-1) | ps <- pss]
                      in (minimum feature, maximum feature)):(rangeHelp (l-1) pss)
 
 -- Create random points within that range for each centroid
-run :: Int -> [Point] -> IO ()
-run k pss = do 
-              c <- (initClusters k pss)
-              print (c)
+--run :: Int -> [Point] -> IO ()
+--run k pss = do 
+--              c <- (initClusters k pss)
+--              print (c)
 
-initClusters :: Int -> [Point] -> IO Float
-initClusters k pss = getRand (fst getRange) (snd getRange)
+initClusters :: Int -> [Point] -> [IO Float]
+initClusters k pss = initClustersHelp (range pss) 
+--getRand (fst (range pss)) (snd (range pss))
+
+initClustersHelp :: [Point] -> [IO Float]
+initClustersHelp []   = []
+initClustersHelp (r:rs) = (getRand (fst r) (snd r)):(initClustersHelp rs)
 
 getRand:: Float -> Float ->IO Float
 getRand f s= (randomRIO (f, s))
