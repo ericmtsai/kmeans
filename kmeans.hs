@@ -1,9 +1,34 @@
 import Data.List
+import System.Random
 
 -- a point to classify is an n-dimensional vector
 type Point = [Float]
 
---
+-- We want our initial centroids to be reasonable values,
+-- so we find the range of each "feature"
+--range :: [Point] -> [(IO Float, IO Float)]
+range pss = reverse (rangeHelp (length(head pss)) pss)
+
+--rangeHelp :: Int -> [Point] -> [(IO Float, IO Float)]
+rangeHelp 0 _   = []
+rangeHelp l pss = (let feature = [ps !! (l-1) | ps <- pss]
+                     in (minimum feature, maximum feature)):(rangeHelp (l-1) pss)
+
+-- Create random points within that range for each centroid
+run :: Int -> [Point] -> IO ()
+run k pss = do 
+              c <- (initClusters k pss)
+              print (c)
+
+initClusters :: Int -> [Point] -> IO Float
+initClusters k pss = getRand (fst getRange) (snd getRange)
+
+getRand:: Float -> Float ->IO Float
+getRand f s= (randomRIO (f, s))
+
+getRange :: (Float, Float)
+getRange = (0.0, 100.0)
+
 --assign :: [[Point]] -> [Point] -> Float -> [[Point]]
 -- EM algorithm until the next assigment doesn't change the MSE more than
 -- some error threshold
