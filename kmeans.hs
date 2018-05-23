@@ -1,3 +1,5 @@
+module Kmeans where
+
 import Data.List
 import System.Random
 
@@ -20,13 +22,24 @@ rangeHelp l pss = (let feature = [ps !! (l-1) | ps <- pss]
 --              c <- (initClusters k pss)
 --              print (c)
 
-initClusters :: Int -> [Point] -> [IO Float]
-initClusters k pss = initClustersHelp (range pss) 
+initClusters :: Int -> [Point] -> IO [[Float]]
+initClusters k pss = initClustersCreate k (range pss) 
 --getRand (fst (range pss)) (snd (range pss))
 
-initClustersHelp :: [Point] -> [IO Float]
-initClustersHelp []   = []
-initClustersHelp (r:rs) = (getRand (fst r) (snd r)):(initClustersHelp rs)
+initClustersCreate k rs = do if k == 0 then 
+                               return []
+                             else
+                               do x <- initClustersHelp rs
+                                  xs <- initClustersCreate (k-1) rs
+                                  return (x:xs)
+
+initClustersHelp :: [(Float, Float)] -> IO [Float]
+initClustersHelp rs  = do if rs == [] then
+                             return []
+                          else
+                             do y <- getRand (fst (head rs)) (snd (head rs))
+                                ys <- initClustersHelp (tail rs)
+                                return (y:ys)
 
 getRand:: Float -> Float ->IO Float
 getRand f s= (randomRIO (f, s))
