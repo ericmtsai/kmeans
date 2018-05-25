@@ -6,6 +6,7 @@ import System.Random
 -- a point to classify is an n-dimensional vector
 type Point = [Float]
 
+{-
 -- We want our initial centroids to be reasonable values,
 -- so we find the range of each "feature"
 range :: [Point] -> [(Float, Float)]
@@ -46,6 +47,14 @@ getRand f s= (randomRIO (f, s))
 
 getRange :: (Float, Float)
 getRange = (0.0, 100.0)
+-}
+
+initClusters :: Int -> [Point] -> IO [[Float]]
+initClusters k pss = initClustersHelp (length pss) k pss
+
+initClustersHelp :: Int -> Int -> [Point] -> IO [[Float]]
+initClustersHelp _ k _   = [[]]
+initClustersHelp l k pss = (pss ! (randomRIO 0, l)):(initClustersHelp l (k-1) pss)
 
 --assign :: [[Point]] -> [Point] -> Float -> [[Point]]
 -- EM algorithm until the next assigment doesn't change the MSE more than
