@@ -26,11 +26,14 @@ run fname k err r = do ps <- readIn fname
                        -- single run with the lowest MSE.
                        -- This is not at all efficient because we already 
                        -- calculate these as we're creating the assignments.
-                       let i = findMinIndex mas
-                           as = mas !! i
-                           cs = findCentroids as
+                       let res = findMinIndex mas
+                           i   = fst res
+                           mse = snd res
+                           as  = mas !! i
+                           cs  = findCentroids as
                        saveModel cs
                        assignPoints fname as
+                       putStrLn ("Created "++(show k)++" clusters resulting in MSE of "++(show mse))
 
 -- Now we save the model
 -- just a wrapper for a cleaner "main"
@@ -65,10 +68,10 @@ assignPointsRecToWrite fname a label = do if a == [] then
                                                assignPointsRecToWrite fname (tail a) label
 
 -- Out of all r models built, finds index of the one with minimum MSE
-findMinIndex :: [[[Point]]] -> Int
+findMinIndex :: [[[Point]]] -> (Int, Float)
 findMinIndex mas = let f = map (\x -> findMSE x (findCentroids x)) mas
                       in let (Just i) = elemIndex (minimum f) f
-                           in i
+                           in (i, f !! i)
 
 --so we don't read the file repeatedly in our recursive call
 runHelp :: [Point] -> Int -> Float -> Int -> IO [[[Point]]]
