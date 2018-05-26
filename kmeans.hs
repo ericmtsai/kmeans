@@ -6,70 +6,32 @@ import System.Random
 -- a point to classify is an n-dimensional vector
 type Point = [Float]
 
-{-
 -- We want our initial centroids to be reasonable values,
--- so we find the range of each "feature"
-range :: [Point] -> [(Float, Float)]
-range pss = reverse (rangeHelp (length(head pss)) pss)
-
---rangeHelp :: Int -> [Point] -> [(IO Float, IO Float)]
-rangeHelp 0 _   = []
-rangeHelp l pss = (let feature = [ps !! (l-1) | ps <- pss]
-                     in (minimum feature, maximum feature)):(rangeHelp (l-1) pss)
-
--- Create random points within that range for each centroid
---run :: Int -> [Point] -> IO ()
---run k pss = do 
---              c <- (initClusters k pss)
---              print (c)
-
-initClusters :: Int -> [Point] -> IO [[Float]]
-initClusters k pss = initClustersCreate k (range pss) 
---getRand (fst (range pss)) (snd (range pss))
-
-initClustersCreate k rs = do if k == 0 then 
-                               return []
-                             else
-                               do x <- initClustersHelp rs
-                                  xs <- initClustersCreate (k-1) rs
-                                  return (x:xs)
-
-initClustersHelp :: [(Float, Float)] -> IO [Float]
-initClustersHelp rs  = do if rs == [] then
-                             return []
-                          else
-                             do y <- getRand (fst (head rs)) (snd (head rs))
-                                ys <- initClustersHelp (tail rs)
-                                return (y:ys)
-
-getRand:: Float -> Float ->IO Float
-getRand f s= (randomRIO (f, s))
-
-getRange :: (Float, Float)
-getRange = (0.0, 100.0)
--}
-
-initClusters :: Int -> [Point] -> IO [[Float]]
+-- so we randomly take points from the initial dataset
+-- and assign those as the initial k centroids to cluster around
+initClusters :: Int -> [Point] -> IO [Point]
 initClusters k ps = initClustersHelp (length ps) k ps
 
-initClustersHelp :: Int -> Int -> [Point] -> IO [[Float]]
+--probably want to add some checking here that we don't take the same on etwice
+initClustersHelp :: Int -> Int -> [Point] -> IO [Point]
 initClustersHelp _ 0 _   = return []
 initClustersHelp l k ps = do  i <- randomRIO(0, (l-1))::IO Int
                               let x = ps !! i
                               do xs <- initClustersHelp l (k-1) ps
                                  return (x:xs)
 
---assign :: [[Point]] -> [Point] -> Float -> [[Point]]
 -- EM algorithm until the next assigment doesn't change the MSE more than
 -- some error threshold
+assign :: [[Point]] -> [Point] -> Float -> [[Point]]
 assign pss cs err = 
   let mse = findMSE pss cs 
     in let newCluster = findCentroids pss
-       in if mse - (findMSE (cluster (concat pss) newCluster) newCluster) < err then
-             cluster (concat pss) newCluster
-             --newCluster
-          else assign (cluster (concat pss) newCluster) newCluster err
-
+       -- Check if % change in finding the next cluster iteration is larger than error threshold
+       in if ((mse - (findMSE (cluster (concat pss) newCluster) newCluster)) / mse) > err then
+             --if so, continue clustering
+             assign (cluster (concat pss) newCluster) newCluster err
+          -- otherwise, we're done
+          else cluster (concat pss) newCluster
 
 -- a centroid is the mean of all the points
 findCentroid :: [Point] -> Point
@@ -88,8 +50,10 @@ findCentroids pss = map (findCentroid) pss
 
 -- assign unclustered points to centroids
 -- each cluster name is the index in the list
+cluster :: [Point] -> [Point] -> [[Point]]
 cluster (x:xs) (c:cs) = reverse (clusterHelper (length (c:cs)) (x:xs) (c:cs))
 
+clusterHelper :: Int -> [Point] -> [Point] -> [[Point]]
 clusterHelper 0 _ _   = []
 clusterHelper l xs cs = [x | x <- xs, (findCluster x cs) == (l-1)]:(clusterHelper (l-1) xs cs)
 
@@ -104,12 +68,18 @@ findClusterHelper :: Point -> [Point] -> [Float]
 findClusterHelper _ []     = []
 findClusterHelper x (c:cs) = (findDist x c):(findClusterHelper x (cs))
 
+-- get the distance between two points
+findDist :: Point -> Point -> Float
 findDist x c = sum [((fst d)-(snd d))**2 |d <- zip x c]
 
 -- the error is the mean total distance of a cluster from its centroid 
+-- this computes MSE for the first cluster, then recurses on the tail
+findMSE :: [[Point]] -> [Point] -> Float
 findMSE [] _  = 0
 findMSE _ []  = 0
 findMSE xs cs = ((findDistRec (head xs) (head cs)) / fromIntegral (length (head xs))) + (findMSE (tail xs) (tail cs))
 
+-- finds Euclidean distance for a cluster and its centroid
+findDistRec :: [Point] -> Point -> Float
 findDistRec [] _  = 0
 findDistRec xs c = (findDist (head xs) c) + (findDistRec (tail xs) c) 
