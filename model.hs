@@ -29,14 +29,40 @@ run fname k err r = do ps <- readIn fname
                        let i = findMinIndex mas
                            as = mas !! i
                            cs = findCentroids as
-                       return cs
+                       saveModel cs
+                       assignPoints fname as
 
--- Now we write out the assignments...
+-- Now we save the model
+-- just a wrapper for a cleaner "main"
+saveModel :: [Point] -> IO()
+saveModel cs = saveModelRec cs 0
 
--- And we write out the clusters++"|1")
-saveModel cs = do
-                 appendFile "model.km" ((init (tail str))++"|"++(show 1)++"\n")
-                   where str = (show cs)
+saveModelRec cs label = do if cs == [] then
+                             return ()
+                           else
+                             do formatAndWrite "model.km" (head cs) label
+                                saveModelRec (tail cs) (label + 1)
+
+formatAndWrite :: String -> Point -> Int -> IO()
+formatAndWrite fname centroid label = do
+                                  appendFile fname ((init (tail str))++","++(show label)++"\n")
+                                    where str = (show centroid)
+
+-- write out the assignment of points:
+assignPoints :: String -> [[Point]] -> IO()
+assignPoints fname as = assignPointsRec ("assigned_" ++ fname) as 0
+
+assignPointsRec fname as label = do if as == [] then
+                                      return ()
+                                    else
+                                      do assignPointsRecToWrite fname (head as) label
+                                         assignPointsRec fname (tail as) (label + 1)
+
+assignPointsRecToWrite fname a label = do if a == [] then
+                                            return ()
+                                          else
+                                            do formatAndWrite fname (head a) label
+                                               assignPointsRecToWrite fname (tail a) label
 
 -- Out of all r models built, finds index of the one with minimum MSE
 findMinIndex :: [[[Point]]] -> Int
