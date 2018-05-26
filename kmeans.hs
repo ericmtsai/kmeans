@@ -50,11 +50,14 @@ getRange = (0.0, 100.0)
 -}
 
 initClusters :: Int -> [Point] -> IO [[Float]]
-initClusters k pss = initClustersHelp (length pss) k pss
+initClusters k ps = initClustersHelp (length ps) k ps
 
 initClustersHelp :: Int -> Int -> [Point] -> IO [[Float]]
-initClustersHelp _ k _   = [[]]
-initClustersHelp l k pss = (pss ! (randomRIO 0, l)):(initClustersHelp l (k-1) pss)
+initClustersHelp _ 0 _   = return []
+initClustersHelp l k ps = do  i <- randomRIO(0, (l-1))::IO Int
+                              let x = ps !! i
+                              do xs <- initClustersHelp l (k-1) ps
+                                 return (x:xs)
 
 --assign :: [[Point]] -> [Point] -> Float -> [[Point]]
 -- EM algorithm until the next assigment doesn't change the MSE more than
