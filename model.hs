@@ -69,7 +69,7 @@ assignPointsRecToWrite fname a label = do if a == [] then
 
 -- Out of all r models built, finds index of the one with minimum MSE
 findMinIndex :: [[[Point]]] -> (Int, Float)
-findMinIndex mas = let f = map (\x -> findMSE x (findCentroids x)) mas
+findMinIndex mas = let f = map (\x -> findSSE x (findCentroids x)) mas
                       in let (Just i) = elemIndex (minimum f) f
                            in (i, f !! i)
 

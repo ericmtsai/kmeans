@@ -24,10 +24,10 @@ initClustersHelp l k ps = do  i <- randomRIO(0, (l-1))::IO Int
 -- some error threshold
 assign :: [[Point]] -> [Point] -> Float -> [[Point]]
 assign pss cs err = 
-  let mse = findMSE pss cs 
+  let mse = findSSE pss cs 
     in let newCluster = findCentroids pss
        -- Check if % change in finding the next cluster iteration is larger than error threshold
-       in if ((mse - (findMSE (cluster (concat pss) newCluster) newCluster)) / mse) > err then
+       in if ((mse - (findSSE (cluster (concat pss) newCluster) newCluster)) / mse) > err then
              --if so, continue clustering
              assign (cluster (concat pss) newCluster) newCluster err
           -- otherwise, we're done
@@ -74,10 +74,10 @@ findDist x c = sum [((fst d)-(snd d))**2 |d <- zip x c]
 
 -- the error is the mean total distance of a cluster from its centroid 
 -- this computes MSE for the first cluster, then recurses on the tail
-findMSE :: [[Point]] -> [Point] -> Float
-findMSE [] _  = 0
-findMSE _ []  = 0
-findMSE xs cs = ((findDistRec (head xs) (head cs)) / fromIntegral (length (head xs))) + (findMSE (tail xs) (tail cs))
+findSSE :: [[Point]] -> [Point] -> Float
+findSSE [] _  = 0
+findSSE _ []  = 0
+findSSE xs cs = (findDistRec (head xs) (head cs)) + (findSSE (tail xs) (tail cs))
 
 -- finds Euclidean distance for a cluster and its centroid
 findDistRec :: [Point] -> Point -> Float
